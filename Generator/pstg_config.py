@@ -47,6 +47,10 @@ def load_app_config():
         'OverwriteExistingFiles': config.getboolean('GeneralSettings', 'OverwriteExistingFiles', fallback=False),
         # UseModuleNameContains（モジュール名を含める）
         'UseModuleNameContains': config.getboolean('GeneralSettings', 'UseModuleNameContains', fallback=False),
+        
+        # UpdateConfigToml（config.toml の module_poses セクションに設定を挿入する）
+        'UpdateConfigToml': config.getboolean('GeneralSettings', 'UpdateConfigToml', fallback=False),
+        
         # Language（言語）
         # 'Language': config.get('GeneralSettings', 'Language', fallback='en'),
         # ShowDebugSettings（デバッグ設定を表示する）

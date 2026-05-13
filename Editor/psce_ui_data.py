@@ -402,7 +402,18 @@ class PoseDataTab:
             self.app.show_status_message(self.trans.get("req_suffix"), "error")
             return
         new_section = f"PoseScaleSetting_{suffix}"
-        
+
+        # 重複チェックのみ実施（この時点では config は変更しない）
+        # 既存のセクション名と異なる場合
+        if self.app.selected_pose_data_section and self.app.selected_pose_data_section != new_section:
+            # 新しいセクション名と既存のセクション名が異なる場合
+            if self.app.current_pose_config.has_section(new_section):
+                # CustomMessagebox.show_error(self.trans.get("error"), self.trans.get("duplicate_section_error", new_section), self.app.root)
+                self.app.show_status_message(self.trans.get("duplicate_section_error", new_section), "error")
+                return
+        # ※ rename 処理はスナップショット後に移動
+
+        '''
         # 既存のセクション名と異なる場合
         if self.app.selected_pose_data_section and self.app.selected_pose_data_section != new_section:
             # 新しいセクション名と既存のセクション名が異なる場合
@@ -429,6 +440,7 @@ class PoseDataTab:
         # 新しいセクション名が存在しない場合
         if not self.app.current_pose_config.has_section(new_section):
             self.app.current_pose_config.add_section(new_section)
+        '''
             
         # データを設定（カンマ正規化を適用）
         display_name = self.app.pd_chara_var.get()
@@ -532,6 +544,30 @@ class PoseDataTab:
 
         # 変更が検出された場合のみスナップショットを取る
         self.app.history.snapshot('data')
+
+        # セクション名が変更された場合、ここで config を再構築（リネーム）する
+        # ※ 全バリデーション通過後に行うことで、途中 return による config 状態不整合を防ぐ
+        # 既存のセクション名と異なる場合
+        if self.app.selected_pose_data_section and self.app.selected_pose_data_section != new_section:
+            # 既存のセクション名が存在する場合
+            if self.app.current_pose_config.has_section(self.app.selected_pose_data_section):
+                sections = self.app.current_pose_config.sections()
+                new_config = configparser.ConfigParser()
+                new_config.optionxform = str
+                for section in sections:
+                    if section == self.app.selected_pose_data_section:
+                        new_config.add_section(new_section)
+                        for k, v in self.app.current_pose_config.items(section, raw=True):
+                            new_config.set(new_section, k, v)
+                    else:
+                        new_config.add_section(section)
+                        for k, v in self.app.current_pose_config.items(section, raw=True):
+                            new_config.set(section, k, v)
+                self.app.current_pose_config = new_config
+                
+        # 新しいセクション名が存在しない場合（セクションが存在しない場合は追加）
+        if not self.app.current_pose_config.has_section(new_section):
+            self.app.current_pose_config.add_section(new_section)
 
         self.app.current_pose_config.set(new_section, 'Chara', code)   # キャラ枠を設定
         self.app.current_pose_config.set(new_section, 'ModuleNameContains', match_val)  # モジュール一致を設定

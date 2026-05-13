@@ -36,7 +36,24 @@ class GeneralSettingsTab:
 
         # Save in parent directory（親ディレクトリに保存）
         self.app.save_parent_var = tk.BooleanVar(value=self.app.main_config.getboolean('GeneralSettings', 'SaveInParentDirectory', fallback=False))
-        ttk.Checkbutton(frame_gen, text=self.trans.get("save_parent"), variable=self.app.save_parent_var).pack(anchor='w')
+
+        # UpdateConfigToml チェックボックス（save_parent が ON の時のみ表示）
+        self.app.update_config_toml_var = tk.BooleanVar(value=self.app.main_config.getboolean('GeneralSettings', 'UpdateConfigToml', fallback=False))
+
+        # save_parent と update_config_toml を同じフレームに横並び配置
+        frame_save_parent = ttk.Frame(frame_gen)
+        frame_save_parent.pack(fill='x', anchor='w')
+        ttk.Checkbutton(frame_save_parent, text=self.trans.get("save_parent"),
+                        variable=self.app.save_parent_var,
+                        command=self._on_save_parent_changed).pack(side='left')
+        # update_config_toml チェックボックス（save_parent ON の時のみ表示）
+        self.chk_update_config_toml = ttk.Checkbutton(
+            frame_save_parent,
+            text=self.trans.get("update_config_toml"),
+            variable=self.app.update_config_toml_var)
+        # 初期表示状態を設定
+        if self.app.save_parent_var.get():
+            self.chk_update_config_toml.pack(side='left', padx=(10, 0))
 
         # Default pose name（デフォルトポーズ名）
         frame_def_pose = ttk.Frame(frame_gen)
@@ -102,6 +119,15 @@ class GeneralSettingsTab:
 
         self.toggle_debug_settings(silent=True)
 
+    # save_parent チェックボックスの状態変化時の処理
+    def _on_save_parent_changed(self):
+        """SaveInParentDirectory の ON/OFF に連動して update_config_toml チェックボックスを表示・非表示"""
+        if self.app.save_parent_var.get():
+            # save_parent が ON → update_config_toml チェックボックスを表示
+            self.chk_update_config_toml.pack(side='left', padx=(10, 0))
+        else:
+            # save_parent が OFF → update_config_toml チェックボックスを非表示
+            self.chk_update_config_toml.pack_forget()
 
 
     # デバッグ設定切り替え
@@ -166,6 +192,9 @@ class GeneralSettingsTab:
         # if path_ui != current_path: has_changes = True
         # GeneralSettings
         if str(self.app.save_parent_var.get()) != self.app.main_config.get('GeneralSettings', 'SaveInParentDirectory', fallback='False'): has_changes = True
+
+        # UpdateConfigTomlの現在の保存済み値と UI の現在値を比較して、変更があれば has_changes = True にする（保存ボタンを押した時、実際に値が変わっているかどうかを確認する処理）
+        if str(self.app.update_config_toml_var.get()) != self.app.main_config.get('GeneralSettings', 'UpdateConfigToml', fallback='False'): has_changes = True
         
         # DefaultPoseFileName (バリデーションは変更がある場合または保存時に実施されるが、ここでは単純比較)
         current_def_pose = self.app.main_config.get('GeneralSettings', 'DefaultPoseFileName', fallback='gm_module_pose_tbl')
@@ -206,7 +235,12 @@ class GeneralSettingsTab:
 
         if 'GeneralSettings' not in self.app.main_config: self.app.main_config['GeneralSettings'] = {}
         self.app.main_config['GeneralSettings']['SaveInParentDirectory'] = str(self.app.save_parent_var.get())
-        
+
+        # UpdateConfigToml の値をそのまま保存（save_parent が OFF でも設定値は維持する）
+        # Generator側で SaveInParentDirectory が OFF の時は UpdateConfigToml が True でも無視される
+        self.app.main_config['GeneralSettings']['UpdateConfigToml'] = str(self.app.update_config_toml_var.get())
+
+
         # DefaultPoseFileName検証
         def_pose_name = normalize_text(self.app.def_pose_name_var.get())
         # 半角英数字と記号のみで構成されているか検証
@@ -279,6 +313,11 @@ class GeneralSettingsTab:
         """Restore UI state from main_config"""
         self.app.farc_path_var.set(self.app.main_config.get('FarcPack', 'FarcPackPath', fallback=''))
         self.app.save_parent_var.set(self.app.main_config.getboolean('GeneralSettings', 'SaveInParentDirectory', fallback=False))
+
+        # UpdateConfigToml の読み込み
+        self.app.update_config_toml_var.set(self.app.main_config.getboolean('GeneralSettings', 'UpdateConfigToml', fallback=False))
+        self._on_save_parent_changed()  # 表示状態を反映
+
         self.app.def_pose_name_var.set(self.app.main_config.get('GeneralSettings', 'DefaultPoseFileName', fallback='gm_module_pose_tbl'))
         self.app.use_module_name_contains_var.set(self.app.main_config.getboolean('GeneralSettings', 'UseModuleNameContains', fallback=False))
         self.app.overwrite_existing_var.set(self.app.main_config.getboolean('GeneralSettings', 'OverwriteExistingFiles', fallback=False))

@@ -15,6 +15,7 @@ class TranslationManager:
                 "browse": "Browse",
                 "gen_settings": "General Settings",
                 "save_parent": "Save In Parent Directory",
+                "update_config_toml": "Write module_poses to config.toml (if absent)", # config.tomlにmodule_posesの項目を設定する
                 "def_pose_name": "Default Pose File Name:",
                 "use_module_match": "Use Module Name Contains (Enable Profiles)",
                 "use_module_name_contains": "Use Module Name Contains (Enable Profiles)",
@@ -185,6 +186,7 @@ class TranslationManager:
                 "browse": "参照",
                 "gen_settings": "設定全般",
                 "save_parent": "TOMLファイルを親ディレクトリに保存",
+                "update_config_toml": "config.tomlにmodule_posesを追記する（未設定時）", # config.tomlにmodule_posesの項目を設定する
                 "def_pose_name": "デフォルトPoseファイル名:",
                 "use_module_match": "Tomlプロファイルを有効化（モジュール名一致を使用）",
                 "use_module_name_contains": "Tomlプロファイルを有効化（モジュール名一致を使用）",

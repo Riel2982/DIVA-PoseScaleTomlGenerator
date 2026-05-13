@@ -201,7 +201,8 @@ class ConfigEditorApp:
     def open_github(self):
         """GitHubリポジトリを開く"""
         import webbrowser
-        webbrowser.open("https://github.com/Riel2982/DIVA-PoseScaleTomlGenerator")
+        from psce_update import REPO_OWNER, REPO_NAME
+        webbrowser.open(f"https://github.com/{REPO_OWNER}/{REPO_NAME}")
 
 
     def start_background_update_check(self, toolbar, anchor_widget):

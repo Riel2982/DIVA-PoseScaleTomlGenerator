@@ -5,6 +5,7 @@ import sys
 import ctypes
 from logging.handlers import RotatingFileHandler
 from datetime import datetime
+import time
 
 
 def get_app_dir():
@@ -126,6 +127,78 @@ def save_file_with_timestamp(file_path, data, overwrite=False):
         logging.info(f'ファイルを保存しました {file_path}')
     except OSError as e: # ファイルの保存に失敗しました
         logging.error(f"ファイルの保存に失敗しました: {e}")
+
+# config.toml に module_poses の記述を確認・追記する
+def update_config_toml_module_poses(config_toml_path, pose_file_name):
+    """
+    config.toml に module_poses の記述を確認・追記する。
+    - module_poses が存在しない場合: 末尾に追記して保存する
+    - module_poses が存在する場合:
+        - TomlProfile の PoseFileName と一致する → 何もしない
+        - 一致しない → コンソールに警告を出力し、ログに記録する（書き換えは行わない）
+    文字コード: UTF-8、改行コード: CRLF（元ファイルの設定を維持）
+    """
+    if not os.path.exists(config_toml_path): # config.toml が存在しない場合
+        logging.info(f"config.toml が見つかりません（スキップ）: {config_toml_path}")
+        return True  # ファイルなしは正常スキップ → Finish! が表示される
+
+    expected_toml_name = f"{pose_file_name}.toml"  # 期待するファイル名（拡張子付き）
+
+    try:
+        # newline='' を指定して改行コードを変換せずそのまま読み込む（CRLFを保持）
+        with open(config_toml_path, 'r', encoding='utf-8', newline='') as f:
+            content = f.read()
+    except Exception as e:
+        logging.error(f"config.toml の読み込みに失敗しました: {e}")
+        return False  # 読み込み失敗 → 警告扱い
+
+    # 改行コードを保持したまま行に分割（keepends=True で改行コードごと保持）
+    lines = content.splitlines(keepends=True)
+
+    # module_poses 行を検索
+    existing_value = None
+    for line in lines:
+        stripped = line.strip()
+        # "module_poses" で始まる行を探す（コメント行は除外）
+        if stripped.startswith('module_poses') and '=' in stripped:
+            # 値部分を取り出す（例: module_poses = 'xxx.toml' → 'xxx.toml' → xxx.toml）
+            val_part = stripped.split('=', 1)[1].strip()
+            existing_value = val_part.strip("'\"")  # シングル・ダブルクォートを除去
+            break
+
+    if existing_value is None:
+        # module_poses 記述が存在しない → 末尾に追記して保存
+        logging.info(f"config.toml に module_poses が存在しません。追記します: {expected_toml_name}")
+        try:
+            # 末尾が CRLF または LF で終わっていない場合は先に CRLF を追加
+            if content and not content.endswith(('\r\n', '\n')):
+                content += '\r\n'
+            # 追記行は CRLF 改行で明示（config.toml の標準書式）
+            content += f"module_poses = '{expected_toml_name}'\r\n"
+            # newline='' で書き込み（改行コードを変換しない・CRLFをそのまま保存）
+            with open(config_toml_path, 'w', encoding='utf-8', newline='') as f:
+                f.write(content)
+            logging.info(f"config.toml に module_poses を追記しました: {expected_toml_name}")
+        except Exception as e:
+            logging.error(f"config.toml への追記に失敗しました: {e}")
+            print(f"Error: Failed to update config.toml.{e}")
+            return False  # 追記失敗 → 警告扱い
+    else:
+        # module_poses 記述が存在する → 値を比較
+        if existing_value == expected_toml_name:
+            # 一致 → 何もしない
+            logging.info(f"config.toml の module_poses は一致しています: {existing_value}")
+            return True  # 正常完了（警告なし）
+        else:
+            # 不一致 → コンソール警告 + ログ記録（書き換えは行わない）
+            print(f"Warning: config.toml module_poses mismatch. config.toml has '{existing_value}', expected '{expected_toml_name}'. No changes made.")
+            time.sleep(3)   # ドラッグ＆ドロップ実行時にコンソールが即座に閉じないよう3秒待機
+            logging.warning(
+                f"config.tomlのmodule_poses設定とTomlProfileのPoseファイル名が一致しません。"
+                f"config.toml: '{existing_value}' / TomlProfile PoseFileName: '{expected_toml_name}'"
+            )
+            return False  # 警告あり（不一致）
+    return True  # module_poses が存在しない場合の追記完了 or スキップも正常扱い
 
 def load_chara_mapping():
     """キャラクター名のマッピング関数を返す"""

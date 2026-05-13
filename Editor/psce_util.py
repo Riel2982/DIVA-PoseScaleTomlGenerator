@@ -140,6 +140,7 @@ class ConfigUtility:
                 'SaveInParentDirectory': 'False',
                 'DefaultPoseFileName': 'gm_module_pose_tbl',
                 'UseModuleNameContains': 'False',
+                'UpdateConfigToml': 'False',   # config.toml の module_poses を追記するかどうか
                 'Language': 'en'
             }
             config['DebugSettings'] = {
@@ -149,6 +150,7 @@ class ConfigUtility:
                 'HistoryLimit': '50'
             }
             self.save_config(config, self.main_config_path)
+            # Config.iniに項目が存在しない場合のセーフティーは各UIの設定で、configparser.getboolean(..., fallback=...)で対応
 
         # Profile Config（プロファイル設定）
         if not os.path.exists(self.profile_config_path):

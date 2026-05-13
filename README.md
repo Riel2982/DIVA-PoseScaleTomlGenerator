@@ -154,6 +154,12 @@ The code has been generated using Microsoft Copilot and Antigravity, with some m
 ### beta6a (2026-01-20)
 - GitHubのリポジトリ名修正に伴い、GitHubにアクセスする処理コードを修正［Generator/Editor］
 
+### beta7（2026-05-14）
+- PoseScaleSettingファイルの保存時にPoseIDとScaleが未設定で保存しようとして処理キャンセルされた後、値を設定しても保存できない不具合を修正［Editor］
+- Pose Tomlファイル保存時に、modフォルダのconfig.tomlにmodule_posesが未設定だった場合、Toml Profileで設定したPoseファイル名をconfig.tomlに追記する機能を追加［Generator］
+  - General Settingsで機能のON/OFFを切り替え可能
+- Tomlファイルが無事生成できた場合はコンソールにFinished!と表示してから終了するように変更［Generator］
+
 
 ### 既知の不具合
 - 画像プレビューの削除動作はRedoで再現できない（それ以外の操作はRedoで再現できる）［Editor］

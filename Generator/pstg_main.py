@@ -53,6 +53,7 @@ def launch_editor():
         if has_console():  # コンソール使用時
             input("Press Enter to exit...\n")
 
+
 # メイン処理
 def main():
     logging.debug(f"[DEBUG] {time.time()}: Entering main")
@@ -83,6 +84,10 @@ def main():
     
 
     try:
+        # 全処理が正常完了したかどうかのフラグ（途中でエラー・警告があった場合 False になる）
+        # ※ 早期 return する各エラーケースはこのフラグに関係なく Finish! には到達しない
+        process_ok = True
+
         # 1. 設定の読み込み
         app_config = pstg_config.load_app_config()
         
@@ -197,6 +202,13 @@ def main():
                         
                         if pose_toml_entries:
                             pstg_util.save_file_with_timestamp(save_path, '\n'.join(pose_toml_entries), overwrite=overwrite_existing) # Pose TOML保存
+
+                            # config.toml の module_poses 挿入（親ディレクトリに保存ON、かつ、設定が ON かつconfig.tomlが未設定の場合のみ）
+                            if app_config.get('UpdateConfigToml', False) and app_config['SaveInParentDirectory']:
+                                config_toml_path = os.path.join(save_directory, 'config.toml')
+                                # 戻り値が False（警告あり）の場合は process_ok を False にする
+                                if not pstg_util.update_config_toml_module_poses(config_toml_path, pose_file_name):
+                                    process_ok = False
                         else:
                             logging.info(f"Pose TOMLの内容が空のため、生成をスキップしました: {save_path}")
         else:
@@ -206,6 +218,13 @@ def main():
             
             if pose_toml_entries:
                 pstg_util.save_file_with_timestamp(save_path, '\n'.join(pose_toml_entries), overwrite=overwrite_existing) # Pose TOML保存
+
+                # config.toml の module_poses 自動更新（親ディレクトリに保存ON、かつ、設定が ON かつconfig.tomlが未設定の場合のみ）
+                if app_config.get('UpdateConfigToml', False) and app_config['SaveInParentDirectory']:
+                    config_toml_path = os.path.join(save_directory, 'config.toml')
+                    # 戻り値が False（警告あり）の場合は process_ok を False にする
+                    if not pstg_util.update_config_toml_module_poses(config_toml_path, default_pose_file_name):
+                        process_ok = False
             else:
                 logging.info(f"Pose TOMLの内容が空のため、生成をスキップしました: {save_path}")
 
@@ -219,6 +238,9 @@ def main():
              logging.info(f"Scale TOMLの内容が空のため、生成をスキップしました: {save_path_scale}")
 
         logging.info("全処理が完了しました")
+        # 警告がなかった場合のみ Finish! を表示
+        if process_ok:
+            print("Finished!")
 
     except Exception as e:
         logging.error(f"予期せぬエラーが発生しました: {e}")

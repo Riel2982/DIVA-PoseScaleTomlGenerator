@@ -1,6 +1,7 @@
 import io
 import os
 import configparser
+import logging
 
 class HistoryManager:
     """
