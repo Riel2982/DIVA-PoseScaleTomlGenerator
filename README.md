@@ -81,7 +81,6 @@ The code has been generated using Microsoft Copilot and Antigravity, with some m
     - ランサムウェア対策機能などが誤検知を起こす場合があります。短時間に連続して複数のファイルを操作する作業を避けるか、上記と同様にアプリを除外設定に追加することで回避可能です。
     - ※除外設定はセキュリティリスクを伴う可能性があるため、自己責任でお願いします。
 - UI表示は今後変更する可能性があります。
-    - Editor用のアイコン設定は仮のものです。
 - Toml Profileリスト・PoseScaleリスト・PoseIDリストは自動保存されますが、各タブの右側編集画面およびGeneral Settingsは保存ボタンをクリックする必要があります。
     - Undo / Redo機能で概ね編集ミスをカバー可能です。
 
