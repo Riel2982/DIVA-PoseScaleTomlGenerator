@@ -34,7 +34,7 @@ The code has been generated using Microsoft Copilot and Antigravity, with some m
     - 生成先に同名ファイルが存在する時は、既存ファイルをタイムスタンプ付きにリネーム（バックアップ）してから出力しますが、Editorで'既存ファイルを上書き'をONにするとバックアップを無効化します。
     - Editorで'プロファイルを有効化'をONにすると読み込んだモジュールデータと条件が一致するプロファイルを自動で判別し、Tomlファイルを出力します。（複数の設定を使い分けたいときなどに）
         - プロファイルが無効中に使用される設定ファイルは"PoseScaleData.ini"です。
-
+      　- 'config.tomlにmodule_posesを追記する'機能がONの時かつ、出力先のconfig.tomlの中にmodule_posesという項目がなければ追記します。
 
 ### Toml Profile
 - モジュール一致: 指定した単語と読み込んだFarcファイルのいずれかのモジュール名が一致する場合、このプロファイルを使うという条件指定欄。
@@ -46,7 +46,7 @@ The code has been generated using Microsoft Copilot and Antigravity, with some m
     - 'Pose Scale Data'タブで編集したPoseScale設定ファイルの中からプルダウンで選択。
         - 'ファイルを編集'ボタンをクリックすると、該当するPoseScale設定ファイル編集画面に移動します。（移動前にTomlプロファイルを更新するのを忘れないように注意してください）
 - Poseファイル名: 生成されるPose用のTomlファイル名を設定する欄。
-    - "gm_module_pose_tbl.toml"か、modの"config.toml"で指定するカスタムファイル名を入力してください。
+    - modの"config.toml"で指定するカスタムファイル名を入力してください。
         - カスタムファイル名とは``` module_poses = 'poses.toml' ```の'poses.toml'の部分のこと。
 
 
@@ -71,6 +71,12 @@ The code has been generated using Microsoft Copilot and Antigravity, with some m
     - 同じPoseIDを重複して登録できません（上書きされます）。
 - Pose名: 自分でどのモーションかわかりやすいように設定してください。
 - 画像プレビュー: モーション選択の判断材料として参考画像をキープしたい時に使ってください。
+
+### GitHubアイコン
+- GitHubのアイコンをクリックすると、[本アプリのGitHubリポジトリ](https://github.com/Riel2982/DIVA-PoseScaleTomlGenerator)が開きます。
+- アプリの最新バージョンがある場合、アイコンの左側に通知が表示されます。
+  - 通知ボタンをクリックすると、そのままGeneretor/Editorをアップデートすることができます。
+  - Editorがアップデート対象に含まれている場合、アプリを終了させる必要があるので必ず編集中のデータは保存してからアップデートを実行して下さい。
 
 
 ## 注意事項
@@ -162,11 +168,8 @@ The code has been generated using Microsoft Copilot and Antigravity, with some m
 
 ### 既知の不具合
 - 画像プレビューの削除動作はRedoで再現できない（それ以外の操作はRedoで再現できる）［Editor］
-- 連続して再起動できない（一度だけならできるがGitHubアイコンが表示されずテキストラベル表示になる）［Editor］
-    - Pythonのonefileオプションを使用しているため回避不可
 - 20秒ほど起動に時間がかかる時がある［Editor/Generator］
     - PyInstallerのEXE化による展開オーバーヘッドが原因。アップデート処理関連で使用しているrequestsライブラリが巨大でPythonが実際に動き出すまでの「解凍時間」が伸びている。特にウイルス対策ソフトが介入するとさらに遅くなる。
-    - --onedirオプションを使用することで解凍処理が不要になり、展開時間は短くなるが、ファイル数が増えてフォルダごとの管理になる。
     - 原因の一因である外部ライブラリ（requests, packaging）の代わりにurllibと自作関数に置き換え。
 
 
