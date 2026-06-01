@@ -1,3 +1,5 @@
+# psce_ui_general.py
+
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import sys
@@ -243,6 +245,10 @@ class GeneralSettingsTab:
 
         # DefaultPoseFileName検証
         def_pose_name = normalize_text(self.app.def_pose_name_var.get())
+        # 未入力チェック（空欄の場合は保存キャンセル）
+        if not norm_def_pose:
+            self.app.show_status_message(self.trans.get("err_def_pose_required"), "error")
+            return
         # 半角英数字と記号のみで構成されているか検証
         if not all(c.isascii() and (c.isalnum() or c in ('_', '-', '.')) for c in norm_def_pose):
         # if not all(c.isascii() and (c.isalnum() or c in ('_', '-', '.')) for c in def_pose_name):

@@ -1,3 +1,5 @@
+# psce_ui_data.py
+
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 import configparser
@@ -18,9 +20,10 @@ class PoseDataTab:
     def create_widgets(self):
         frame_top = ttk.Frame(self.tab, padding=5)
         frame_top.pack(fill='x')
+        # Targetファイル欄
         ttk.Label(frame_top, text=self.trans.get("target_file")).pack(side='left')
         # self.app.pose_file_combo = ttk.Combobox(frame_top, width=40)
-        self.app.pose_file_combo = ttk.Combobox(frame_top, width=40, state='readonly')  # ← state='readonly'を追加してTargetファイル欄のテキストボックス入力を無効化
+        self.app.pose_file_combo = ttk.Combobox(frame_top, width=40, state='readonly')  # state='readonly'を追加してTargetファイル欄のテキストボックス入力を無効化
         self.app.pose_file_combo.pack(side='left', padx=5)
         self.app.pose_file_combo.bind('<<ComboboxSelected>>', self.load_pose_data_file)
         
@@ -140,8 +143,20 @@ class PoseDataTab:
 
     # ポーズファイルコンボボックス更新
     def refresh_pose_files(self):
+        default_file = "PoseScaleData.ini"
+        default_path = os.path.join(self.app.utils.pose_data_dir, default_file)
+
+        # デフォルトファイルが消えていたら即復元
+        if not os.path.exists(default_path):
+            self.app.utils._ensure_default_files()
+
         files = [f for f in os.listdir(self.app.utils.pose_data_dir) if f.endswith('.ini')]
-        self.app.pose_file_combo['values'] = files
+
+        # default_file = "PoseScaleData.ini"
+        # デフォルトを先頭に、それ以外は元の順序のまま後ろに並べる
+        sorted_files = [default_file] + [f for f in files if f != default_file]
+
+        self.app.pose_file_combo['values'] = sorted_files
         # ファイルが存在する場合
         if files:
             if not self.app.pose_file_combo.get() or self.app.pose_file_combo.get() not in files:
@@ -719,6 +734,12 @@ class PoseDataTab:
         
         # 現在のファイル名を取得
         old_filename = os.path.basename(self.app.current_pose_file_path)
+
+        # デフォルトPoseScaleファイルはリネーム禁止
+        if old_filename == "PoseScaleData.ini":
+            self.app.show_status_message(self.trans.get("msg_cannot_rename_default"),"warning")
+            return
+
         base_name, ext = os.path.splitext(old_filename)
         
         # 初期値を渡す
@@ -764,23 +785,29 @@ class PoseDataTab:
     def delete_current_pose_file(self):
         if not self.app.current_pose_file_path: return
         filename = os.path.basename(self.app.current_pose_file_path)
+
+        # デフォルトPoseScaleファイルは削除禁止
+        if filename == "PoseScaleData.ini":
+            self.app.show_status_message(self.trans.get("msg_cannot_delete_default"), "warning")
+            return
+
         # 削除時に確認はしない（Undoで対応）
-        if True:
-            try:
-                # Undo/Redo履歴の記録
-                self.app.history.snapshot('data')
-                
-                os.remove(self.app.current_pose_file_path)
-                self.app.current_pose_file_path = None
-                self.app.current_pose_config = None
+    # if True:  # if Trueで処理する場合はインデント下げる
+        try:
+            # Undo/Redo履歴の記録
+            self.app.history.snapshot('data')
+            
+            os.remove(self.app.current_pose_file_path)
+            self.app.current_pose_file_path = None
+            self.app.current_pose_config = None
 
-                # 削除完了の案内
-                message = self.trans.get("msg_deleted_file").format(filename)
-                self.app.show_status_message(message, "info")
+            # 削除完了の案内
+            message = self.trans.get("msg_deleted_file").format(filename)
+            self.app.show_status_message(message, "info")
 
-                self.refresh_pose_files()
-                # ファイルが残っていない場合、フィールドをクリアする
-            except Exception as e:
-                # CustomMessagebox.show_error(self.trans.get("error"), f"Failed to delete file: {e}", self.app.root)
-                self.app.show_status_message(self.trans.get("err_failed_delete", e), "error")
+            self.refresh_pose_files()
+            # ファイルが残っていない場合、フィールドをクリアする
+        except Exception as e:
+            # CustomMessagebox.show_error(self.trans.get("error"), f"Failed to delete file: {e}", self.app.root)
+            self.app.show_status_message(self.trans.get("err_failed_delete", e), "error")
                 

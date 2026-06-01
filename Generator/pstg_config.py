@@ -1,3 +1,5 @@
+# pstg_config.py
+
 import configparser
 import os
 import logging
@@ -52,7 +54,7 @@ def load_app_config():
         'UpdateConfigToml': config.getboolean('GeneralSettings', 'UpdateConfigToml', fallback=False),
         
         # Language（言語）
-        # 'Language': config.get('GeneralSettings', 'Language', fallback='en'),
+        'Language': config.get('GeneralSettings', 'Language', fallback='en'),
         # ShowDebugSettings（デバッグ設定を表示する）
         # 'ShowDebugSettings': config.getboolean('DebugSettings', 'ShowDebugSettings', fallback=False),
         # OutputLog（出力ログ）

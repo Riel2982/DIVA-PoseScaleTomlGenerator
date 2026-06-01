@@ -1,3 +1,5 @@
+# pstg_util.py
+
 import os
 import shutil
 import logging
@@ -129,7 +131,7 @@ def save_file_with_timestamp(file_path, data, overwrite=False):
         logging.error(f"ファイルの保存に失敗しました: {e}")
 
 # config.toml に module_poses の記述を確認・追記する
-def update_config_toml_module_poses(config_toml_path, pose_file_name):
+def update_config_toml_module_poses(config_toml_path, pose_file_name, lang='en'):    # lang: 'en' または 'ja'（pstg_main から渡される言語設定・デフォルト英語）
     """
     config.toml に module_poses の記述を確認・追記する。
     - module_poses が存在しない場合: 末尾に追記して保存する
@@ -191,7 +193,13 @@ def update_config_toml_module_poses(config_toml_path, pose_file_name):
             return True  # 正常完了（警告なし）
         else:
             # 不一致 → コンソール警告 + ログ記録（書き換えは行わない）
-            print(f"Warning: config.toml module_poses mismatch. config.toml has '{existing_value}', expected '{expected_toml_name}'. No changes made.")
+            # lang に応じて警告メッセージを切り替える
+            if lang == 'ja':
+                print(f"⚠ 出力されたPoseファイル名とconfig.tomlのmodule_poses設定が一致しません。確認して下さい。")
+                print(f"config.toml: '{existing_value}', 出力Poseファイル名: '{expected_toml_name}'.")
+            else:
+                print(f"Warning: config.toml module_poses mismatch. config.toml has '{existing_value}', expected '{expected_toml_name}'. No changes made.")
+            # print(f"Warning: config.toml module_poses mismatch. config.toml has '{existing_value}', expected '{expected_toml_name}'. No changes made.")
             time.sleep(3)   # ドラッグ＆ドロップ実行時にコンソールが即座に閉じないよう3秒待機
             logging.warning(
                 f"config.tomlのmodule_poses設定とTomlProfileのPoseファイル名が一致しません。"

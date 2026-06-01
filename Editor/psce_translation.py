@@ -1,4 +1,6 @@
-class TranslationManager:
+# psce_translation.py
+
+class TranslationManager:    
     def __init__(self):
         self.current_lang = "en"
         self.translations = {
@@ -68,6 +70,8 @@ class TranslationManager:
                 "delete_confirm_pose": "Delete section '{}'?",
                 "delete_confirm_map": "Delete mapping for ID {}?",
                 "delete_confirm_file": "Delete file '{}'?",
+                "msg_cannot_delete_default": "This file cannot be deleted (Default PoseScaleData)",
+                "msg_cannot_rename_default": "This file cannot be renamed (Default PoseScaleData)",
                 "file_not_found": "File Not Found",
                 "create_it": "{} does not exist. Create it?",
                 "failed_create": "Failed to create file: {}",
@@ -77,6 +81,7 @@ class TranslationManager:
                 "req_id_name": "Both ID and Name are required.",
                 "no_file_selected": "No file selected.",
                 "err_filename_chars": "File Name must be half-width alphanumeric and symbols (., -, _) only.",
+                "err_def_pose_required": "Default Pose File Name is required. Please enter a file name.",
                 # PosIDMapタブ
                 "image_preview": "Image Preview",
                 "select_image": "Select Image",
@@ -248,6 +253,8 @@ class TranslationManager:
                 "delete_confirm_pose": "セクション '{}' を削除しますか？",
                 "delete_confirm_map": "ID {} のマッピングを削除しますか？",
                 "delete_confirm_file": "ファイル '{}' を削除しますか？",
+                "msg_cannot_delete_default": "PoseScaleData.ini（デフォルトファイル）は削除できません",
+                "msg_cannot_rename_default": "PoseScaleData.ini（デフォルトファイル）はリネームできません",
                 "file_not_found": "ファイルが見つかりません",
                 "create_it": "{} が存在しません。作成しますか？",
                 "failed_create": "ファイルの作成に失敗しました: {}",
@@ -294,6 +301,7 @@ class TranslationManager:
                 "err_failed_rename": "'{}' ファイル名の変更に失敗しました",
                 "err_failed_delete": "'{}' ファイルの削除に失敗しました",
                 "err_load_config_fatal": "Config.ini の読み込みに失敗しました。\nファイルがロックされているか破損している可能性があります。\nデータ損失を防ぐためアプリケーションを終了します。",
+                "err_def_pose_required": "デフォルトPoseファイル名を入力してください。",
                 "msg_canceled": "操作がキャンセルされました",
                 "msg_created_file": "ファイル '{}' を作成しました",
                 "msg_duplicated_file": "ファイル '{}' を複製しました",
@@ -346,6 +354,7 @@ class TranslationManager:
             },
         }
 
+    # テキストを取得する関数（キーと引数を受け取り、翻訳後のテキストを返す）
     def get(self, key, *args):
         lang_dict = self.translations.get(self.current_lang, self.translations["en"])
         text = lang_dict.get(key, key)
@@ -356,6 +365,7 @@ class TranslationManager:
                 return text
         return text
 
+    # 言語を設定する関数（言語コード（'ja'または'en'）を受け取り、現在の言語を更新する）
     def set_language(self, lang):
         if lang in self.translations:
             self.current_lang = lang

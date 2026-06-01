@@ -1,3 +1,5 @@
+# psce_main.py
+
 import logging
 import time     # デバッグログ用（起動時間計測）
 print(f"[DEBUG] {time.time()}: Start importing modules...")

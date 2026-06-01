@@ -1,3 +1,5 @@
+# pstg_main.py
+
 import logging
 import time     # デバッグログ用（起動時間計測）
 logging.debug(f"[DEBUG] {time.time()}: SCRIPT START")
@@ -12,7 +14,11 @@ import pstg_loader
 import pstg_pose
 import pstg_scale
 import pstg_util
+from pstg_translation import get_msg  # get_msg を直接呼び出せるようにインポート
 
+# config.toml への module_poses 挿入をスキップするPoseファイル名（ゲーム標準ファイル固定値）
+# ※ Config.ini の DefaultPoseFileName とは独立した固定値
+GAME_DEFAULT_POSE_FILENAME = 'gm_module_pose_tbl'
 
 # コンソールウィンドウの存在チェック
 def has_console():
@@ -25,7 +31,7 @@ def has_console():
 
 
 # 設定エディタの起動
-def launch_editor():
+def launch_editor(lang='en'):  # lang 引数で言語指定（デフォルト英語）
     """FarckPackパスが有効でない場合、PoseScaleConfigEditor.exeを起動する"""
     # 実行ファイルのディレクトリを取得
     if getattr(sys, 'frozen', False):
@@ -47,16 +53,19 @@ def launch_editor():
              # CREATE_NEW_PROCESS_GROUP = 0x00000200（新しいプロセスグループ）
              subprocess.Popen([editor_path], creationflags=0x00000008 | 0x00000200)
     else:
-        print(f"Error: The settings editor cannot be found: {editor_path}")
+        print(get_msg('editor_not_found', lang, editor_path))
+        # print(f"Error: The settings editor cannot be found: {editor_path}")
         logging.error(f"Error: 設定エディタが見つかりません: {editor_path}")
         # input("Enterキーを押して終了してください...")
         if has_console():  # コンソール使用時
-            input("Press Enter to exit...\n")
+            input(get_msg('press_enter_exit', lang) + '\n')
+            # input("Press Enter to exit...\n")
 
 
 # メイン処理
 def main():
     logging.debug(f"[DEBUG] {time.time()}: Entering main")
+    lang = 'en'  # デフォルト言語（app_config 読み込み前の早期エラー用）
 
     # バージョン情報をコンソールに表示
     from pstg_util import VERSION
@@ -93,15 +102,20 @@ def main():
         
         # Config.iniが存在しない、または読み込み失敗した場合
         if not app_config:
+            # 言語設定が読み込めないため英語固定で表示
             print("The configuration file cannot be found.")
             logging.error("設定ファイルが見つかりません。")
             launch_editor()
             return
 
+        # 言語設定を取得（以降のすべてのコンソールメッセージに適用）
+        lang = app_config.get('Language', 'en')
+
         # FarcPackPathの検証
         farc_pack_path = app_config.get('FarcPackPath', '')
         if not farc_pack_path or not os.path.exists(farc_pack_path) or not os.path.basename(farc_pack_path).lower() == 'farcpack.exe':
-            print("Invalid FarcPack path is set.")
+            print(get_msg('invalid_farcpack', lang))
+            # print("Invalid FarcPack path is set.")
             logging.error("有効なFarcPackパスが設定されていません。")
             launch_editor()
             return
@@ -131,10 +145,12 @@ def main():
 
         # 3. ファイルのドラッグ＆ドロップ処理(引数がない場合は使い方を表示して終了
         if len(sys.argv) < 2:
-            print("Usage: Drag and drop a file onto this executable, or use the 'Send to' menu.")
+            print(get_msg('usage', lang))
+            # print("Usage: Drag and drop a file onto this executable, or use the 'Send to' menu.")
             # input("Press Enter to exit...")
             if has_console():
-                input("Press Enter to exit...\n")
+                input(get_msg('press_enter_exit', lang) + '\n')
+                # input("Press Enter to exit...\n")
             return
 
         # プログラム開始ログ
@@ -155,7 +171,7 @@ def main():
         pose_settings = pstg_loader.load_pose_scale_settings(module_data, app_config) # PoseScale設定の読み込み
         if not pose_settings:
             logging.error("有効なPoseScale設定が読み込めませんでした。処理を中止します。")
-            launch_editor() # 設定エディタを起動
+            launch_editor(lang) # 設定エディタを起動（言語対応）
             return
 
         # 6. キャラクターマッピングの取得
@@ -197,18 +213,29 @@ def main():
                     
                     # マッチする場合
                     if is_match:
-                        pose_file_name = config_profile[section]['PoseFileName'] # Pose TOMLファイル名
+                        # PoseFileName が未設定の場合は DefaultPoseFileName をフォールバックとして使用
+                        pose_file_name = config_profile.get(section, 'PoseFileName', fallback='').strip()
+                        if not pose_file_name:
+                            pose_file_name = app_config.get('DefaultPoseFileName', 'gm_module_pose_tbl')
+                            logging.info(f"[{section}] PoseFileName が未設定のため DefaultPoseFileName を使用します: {pose_file_name}")
                         save_path = os.path.join(save_directory, f'{pose_file_name}.toml') # 保存パス
+
+                        # pose_file_name = config_profile[section]['PoseFileName'] # Pose TOMLファイル名
+                        # save_path = os.path.join(save_directory, f'{pose_file_name}.toml') # 保存パス
                         
                         if pose_toml_entries:
                             pstg_util.save_file_with_timestamp(save_path, '\n'.join(pose_toml_entries), overwrite=overwrite_existing) # Pose TOML保存
 
                             # config.toml の module_poses 挿入（親ディレクトリに保存ON、かつ、設定が ON かつconfig.tomlが未設定の場合のみ）
                             if app_config.get('UpdateConfigToml', False) and app_config['SaveInParentDirectory']:
-                                config_toml_path = os.path.join(save_directory, 'config.toml')
-                                # 戻り値が False（警告あり）の場合は process_ok を False にする
-                                if not pstg_util.update_config_toml_module_poses(config_toml_path, pose_file_name):
-                                    process_ok = False
+                                if pose_file_name == GAME_DEFAULT_POSE_FILENAME:
+                                    # ゲーム標準ファイル名の場合は config.toml への挿入をスキップ
+                                    logging.info(f"'{GAME_DEFAULT_POSE_FILENAME}' はゲーム標準ファイルのため config.toml への挿入をスキップします")
+                                else:
+                                    config_toml_path = os.path.join(save_directory, 'config.toml')
+                                    # 戻り値が False（警告あり）の場合は process_ok を False にする
+                                    if not pstg_util.update_config_toml_module_poses(config_toml_path, pose_file_name, lang=lang):
+                                        process_ok = False
                         else:
                             logging.info(f"Pose TOMLの内容が空のため、生成をスキップしました: {save_path}")
         else:
@@ -221,10 +248,14 @@ def main():
 
                 # config.toml の module_poses 自動更新（親ディレクトリに保存ON、かつ、設定が ON かつconfig.tomlが未設定の場合のみ）
                 if app_config.get('UpdateConfigToml', False) and app_config['SaveInParentDirectory']:
-                    config_toml_path = os.path.join(save_directory, 'config.toml')
-                    # 戻り値が False（警告あり）の場合は process_ok を False にする
-                    if not pstg_util.update_config_toml_module_poses(config_toml_path, default_pose_file_name):
-                        process_ok = False
+                    if default_pose_file_name == GAME_DEFAULT_POSE_FILENAME:
+                        # ゲーム標準ファイル名の場合は config.toml への挿入をスキップ
+                        logging.info(f"'{GAME_DEFAULT_POSE_FILENAME}' はゲーム標準ファイルのため config.toml への挿入をスキップします")
+                    else:
+                        config_toml_path = os.path.join(save_directory, 'config.toml')
+                        # 戻り値が False（警告あり）の場合は process_ok を False にする
+                        if not pstg_util.update_config_toml_module_poses(config_toml_path, default_pose_file_name, lang=lang):
+                            process_ok = False
             else:
                 logging.info(f"Pose TOMLの内容が空のため、生成をスキップしました: {save_path}")
 
@@ -240,16 +271,19 @@ def main():
         logging.info("全処理が完了しました")
         # 警告がなかった場合のみ Finish! を表示
         if process_ok:
-            print("Finished!")
+            print(get_msg('finished', lang))  # 終了メッセージ
+            # print("Finished!") 
 
     except Exception as e:
         logging.error(f"予期せぬエラーが発生しました: {e}")
-        print(f"An unexpected error occurred: {e}")
+        print(get_msg('unexpected_error', lang, e))
+        # print(f"An unexpected error occurred: {e}")
         logging.error(traceback.format_exc())
         traceback.print_exc()
         # input("Enterキーを押して終了してください...")
         if has_console():   # コンソール使用時
-            input("Press Enter to exit...\n")
+            input(get_msg('press_enter_exit', lang) + '\n')
+            # input("Press Enter to exit...\n")
     
     finally:
         # 10. クリーンアップ (デバッグ設定に基づく)

@@ -1,3 +1,5 @@
+# psce_ui_map.py
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 # from PIL import Image, ImageTk
